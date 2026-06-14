@@ -1,12 +1,12 @@
 # 위젯연구소 GitHub Pages
 
-Scriptable 아이폰 위젯 설치 가이드와 위젯 코드 목록을 제공하는 정적 사이트입니다.
+Scriptable 아이폰 위젯 설치 가이드와 DM으로 전달할 개별 위젯 페이지를 제공하는 정적 사이트입니다.
 
 ## 구조
 
 - `index.html`: 메인 페이지
 - `install/`: Scriptable 설치 가이드
-- `widgets/`: 위젯 목록
+- `widgets/`: 목록 없는 DM 링크 안내 페이지
 - `widgets/camping/`: 서울대공원 캠핑장 위젯 페이지
 - `widgets/museum/`: 어린이박물관 위젯 페이지
 - `widgets/pool/`: 수영장 예약 위젯 페이지
@@ -35,5 +35,5 @@ python3 -m http.server 4173
 
 - 위젯 상세 페이지의 Scriptable 코드는 현재 배포 구조 확인용 샘플입니다.
 - 실제 예약 확인 로직이 준비되면 각 상세 페이지의 코드 블록만 교체하면 됩니다.
-- 새 위젯은 `widgets/<slug>/index.html`을 추가하고 `widgets/index.html` 목록에 항목을 더합니다.
+- 새 위젯은 `widgets/<slug>/index.html`을 추가하고, 공개 목록에는 노출하지 않은 채 DM으로 개별 URL을 전달합니다.
 - 도메인을 연결할 때는 GitHub Pages의 custom domain 설정을 사용하고, 필요하면 루트에 `CNAME` 파일을 추가합니다.

@@ -56,3 +56,20 @@ Calm iPhone utility guide: bright, trustworthy, mobile-first, with crisp typogra
 - [x] Re-run lightweight checks before commit.
 - [x] Commit the initial GitHub Pages site.
 - [x] Push the site branch to GitHub.
+
+## Update Plan - Private Widget Links
+- [x] Add the official Scriptable App Store link to the install guide.
+- [x] Change install copy to say "전달받은 스크립트 코드".
+- [x] Remove public widget-list entry points from navigation, home, install, and request pages.
+- [x] Replace the `/widgets/` public list page with a noindex DM-link 안내 page while keeping individual widget detail pages.
+- [x] Update widget detail pages so they do not link back to a public list.
+- [x] Verify local links and browser rendering.
+
+## Update Review - Private Widget Links
+- Added the official Scriptable App Store link on the install guide.
+- Changed install copy to "전달받은 스크립트 코드를 전체 복사해 붙여넣습니다."
+- Removed public widget-list entry points from the header, home page, install page, request page, and widget detail pages.
+- Kept `/widgets/camping/`, `/widgets/museum/`, and `/widgets/pool/` available for direct DM links.
+- Replaced `/widgets/` with a noindex 안내 page that does not expose widget names.
+- Verified 7 local routes return HTTP 200.
+- Verified the install page and direct camping widget page in the in-app browser.
