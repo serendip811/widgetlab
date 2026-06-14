@@ -35,7 +35,230 @@
           </div>
           <button class="copy-button" type="button" data-copy-target="#usd-krw-code">복사</button>
         </div>
-        <pre class="code-block"><code id="usd-krw-code"></code></pre>
+        <pre class="code-block"><code id="usd-krw-code">// === 원달러환율 위젯 ===
+// 현재 환율 + 3개월 평균 + 3년 평균 + 최근 14일 그래프
+// 평균/그래프: Frankfurter
+// 현재: Google Finance HTML 파싱, 실패 시 Frankfurter latest 사용
+
+const BASE = "USD"
+const TARGET = "KRW"
+
+const WIDGET_SIZE = "small" // "small" or "medium"
+
+const fmt = (d) => {
+  const y = d.getFullYear()
+  const m = ("0" + (d.getMonth() + 1)).slice(-2)
+  const da = ("0" + d.getDate()).slice(-2)
+  return `${y}-${m}-${da}`
+}
+
+let today = new Date()
+
+let threeMonthsAgo = new Date()
+threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+
+let threeYearsAgo = new Date()
+threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3)
+
+let fourteenDaysAgo = new Date()
+fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
+
+async function getAverageRate(startDate, endDate) {
+  const url = `https://api.frankfurter.app/${fmt(startDate)}..${fmt(endDate)}?from=${BASE}&to=${TARGET}`
+  const data = await new Request(url).loadJSON()
+
+  const values = Object.values(data.rates)
+    .map(r => r[TARGET])
+    .filter(v => typeof v === "number")
+
+  if (values.length === 0) throw new Error("평균 환율 데이터 없음")
+
+  const avg = values.reduce((a, b) => a + b, 0) / values.length
+  return Math.round(avg)
+}
+
+async function fetchRealtimeRate() {
+  const url = "https://www.google.com/finance/quote/USD-KRW"
+
+  let req = new Request(url)
+  req.headers = {
+    "User-Agent":
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+  }
+
+  let html = await req.loadString()
+  let match = html.match(/YMlKec fxKbKc">([^<]+)/)
+
+  if (!match) {
+    throw new Error("Google Finance 환율 파싱 실패")
+  }
+
+  let text = match[1]
+    .trim()
+    .replace(/[^\d.,]/g, "")
+    .replace(/,/g, "")
+
+  return Math.round(parseFloat(text))
+}
+
+async function fetchFallbackRate() {
+  const url = `https://api.frankfurter.app/latest?from=${BASE}&to=${TARGET}`
+  const data = await new Request(url).loadJSON()
+  return Math.round(data.rates[TARGET])
+}
+
+async function getRecentRates() {
+  const url = `https://api.frankfurter.app/${fmt(fourteenDaysAgo)}..${fmt(today)}?from=${BASE}&to=${TARGET}`
+  const data = await new Request(url).loadJSON()
+
+  const dates = Object.keys(data.rates).sort()
+  const rates = dates
+    .map(date => data.rates[date][TARGET])
+    .filter(v => typeof v === "number")
+
+  if (rates.length === 0) throw new Error("최근 환율 데이터 없음")
+
+  return rates
+}
+
+function drawGraph(values, width = 140, height = 50) {
+  const ctx = new DrawContext()
+  ctx.size = new Size(width, height)
+  ctx.opaque = false
+
+  let min = Math.min(...values)
+  let max = Math.max(...values)
+
+  if (max === min) {
+    max = min + 1
+  }
+
+  let step = width / Math.max(values.length - 1, 1)
+
+  const path = new Path()
+
+  for (let i = 0; i < values.length; i++) {
+    const x = i * step
+    const y = height - ((values[i] - min) / (max - min)) * height
+
+    if (i === 0) {
+      path.move(new Point(x, y))
+    } else {
+      path.addLine(new Point(x, y))
+    }
+  }
+
+  ctx.addPath(path)
+  ctx.setStrokeColor(new Color("#4cd964"))
+  ctx.setLineWidth(3)
+  ctx.strokePath()
+
+  return ctx.getImage()
+}
+
+function addText(widget, text, size = 13, color = "#ffffff", bold = false) {
+  const t = widget.addText(text)
+  t.textColor = new Color(color)
+  t.font = bold ? Font.boldSystemFont(size) : Font.systemFont(size)
+  return t
+}
+
+let current
+let avg3m
+let avg3y
+let dailyRates
+let sourceText = "실시간"
+
+try {
+  avg3m = await getAverageRate(threeMonthsAgo, today)
+  avg3y = await getAverageRate(threeYearsAgo, today)
+  dailyRates = await getRecentRates()
+
+  try {
+    current = await fetchRealtimeRate()
+  } catch (e) {
+    current = await fetchFallbackRate()
+    sourceText = "기준환율"
+  }
+} catch (e) {
+  const w = new ListWidget()
+  w.backgroundColor = new Color("#1c1c1e")
+  w.setPadding(14, 14, 14, 14)
+
+  addText(w, "원달러환율", 15, "#ffffff", true)
+  w.addSpacer(8)
+  addText(w, "데이터를 불러오지 못했어요", 12, "#ff6b6b")
+  w.addSpacer(4)
+  addText(w, "잠시 후 다시 확인해주세요", 11, "#aaaaaa")
+
+  Script.setWidget(w)
+  w.presentSmall()
+  Script.complete()
+  return
+}
+
+const graphWidth = WIDGET_SIZE === "medium" ? 260 : 140
+const graphHeight = WIDGET_SIZE === "medium" ? 60 : 48
+const graphImg = drawGraph(dailyRates, graphWidth, graphHeight)
+
+let w = new ListWidget()
+w.backgroundColor = new Color("#1c1c1e")
+w.setPadding(14, 14, 14, 14)
+
+addText(w, "💵 원달러환율", 15, "#ffffff", true)
+w.addSpacer(5)
+
+addText(w, `현재(${sourceText}) ${current.toLocaleString()}원`, 13, "#ffffff", true)
+w.addSpacer(3)
+
+const gap3m = current - avg3m
+const gap3y = current - avg3y
+
+const sign3m = gap3m >= 0 ? "+" : ""
+const sign3y = gap3y >= 0 ? "+" : ""
+
+addText(
+  w,
+  `3개월 평균 ${avg3m.toLocaleString()}원 (${sign3m}${gap3m}원)`,
+  11,
+  gap3m >= 0 ? "#ff9f0a" : "#4cd964"
+)
+
+addText(
+  w,
+  `3년 평균 ${avg3y.toLocaleString()}원 (${sign3y}${gap3y}원)`,
+  11,
+  gap3y >= 0 ? "#ff9f0a" : "#4cd964"
+)
+
+w.addSpacer(6)
+
+addText(w, "최근 14일 추이", 10, "#bbbbbb")
+w.addSpacer(3)
+
+let imgStack = w.addStack()
+imgStack.addImage(graphImg)
+
+w.addSpacer(4)
+
+const now = new Date()
+const timeText = `${("0" + now.getHours()).slice(-2)}:${("0" + now.getMinutes()).slice(-2)} 업데이트`
+addText(w, timeText, 9, "#777777")
+
+w.refreshAfterDate = new Date(Date.now() + 1000 * 60 * 30)
+
+Script.setWidget(w)
+
+if (config.runsInWidget) {
+  Script.complete()
+} else {
+  if (WIDGET_SIZE === "medium") {
+    w.presentMedium()
+  } else {
+    w.presentSmall()
+  }
+}</code></pre>
       </section>
     </main>
 

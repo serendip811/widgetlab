@@ -35,7 +35,211 @@
           </div>
           <button class="copy-button" type="button" data-copy-target="#seoul-grand-park-code">복사</button>
         </div>
-        <pre class="code-block"><code id="seoul-grand-park-code"></code></pre>
+        <pre class="code-block"><code id="seoul-grand-park-code">const BASE = "https://camp.xticket.kr"
+const SHOP = "b4326b91b88249effc628d1b4cc714d2dec58eb3de89146841929db714ee7058"
+const SHOP_CODE = "106866042601"
+const MAIN_URL = `${BASE}/web/main?shopEncode=${SHOP}`
+
+const CHECK_MONTHS = 2
+const STAY_DAYS = 1
+const WEEKEND_ONLY = true
+
+const w = new ListWidget()
+w.url = MAIN_URL
+w.setPadding(14, 14, 14, 14)
+
+try {
+  await new Request(MAIN_URL).loadString()
+
+  const months = getMonths(CHECK_MONTHS)
+  let dates = []
+
+  for (const m of months) {
+    const r = await postJson("/Web/Book/GetBookPlayDate.json", {
+      play_month: m,
+      shopCode: SHOP_CODE
+    })
+
+    dates = dates.concat(r?.data?.bookPlayDateList || [])
+  }
+
+  const availableDates = []
+
+  for (const d of dates) {
+    const ymd = d.play_date
+    if (!ymd) continue
+    if (WEEKEND_ONLY && !isWeekend(ymd)) continue
+
+    const groups = await postJson("/Web/Book/GetBookProductGroup.json", {
+      start_date: ymd,
+      end_date: ymd,
+      shopCode: SHOP_CODE
+    })
+
+    const groupList = groups?.data?.bookProductGroupList || []
+    let total = 0
+
+    for (const g of groupList) {
+      const groupCode = g.product_group_code
+      if (!groupCode) continue
+
+      const products = await postJson("/Web/Book/GetBookProduct010001.json", {
+        product_group_code: groupCode,
+        start_date: ymd,
+        end_date: ymd,
+        book_days: STAY_DAYS,
+        two_stay_days: 0,
+        shopCode: SHOP_CODE
+      })
+
+      const productList = products?.data?.bookProductList || []
+
+      total += productList.filter(p =>
+        String(p.status_code) === "0" &&
+        String(p.select_yn) === "1"
+      ).length
+    }
+
+    if (total > 0) {
+      availableDates.push({ date: ymd, count: total })
+    }
+
+    if (availableDates.length >= 8) break
+  }
+
+  if (isLockWidget()) {
+    drawLockWidget(availableDates)
+  } else {
+    drawHomeWidget(availableDates)
+  }
+
+} catch (e) {
+  drawError(e)
+}
+
+Script.setWidget(w)
+Script.complete()
+
+if (config.runsInApp) {
+  await w.presentMedium()
+}
+
+async function postJson(path, body) {
+  const req = new Request(BASE + path)
+  req.method = "POST"
+  req.headers = {
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": MAIN_URL,
+    "Origin": BASE
+  }
+
+  req.body = Object.keys(body)
+    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(body[k])}`)
+    .join("&")
+
+  const text = await req.loadString()
+
+  try {
+    return JSON.parse(text)
+  } catch (e) {
+    throw new Error(`${path} JSON 아님`)
+  }
+}
+
+function isLockWidget() {
+  return (
+    config.widgetFamily === "accessoryRectangular" ||
+    config.widgetFamily === "accessoryInline" ||
+    config.widgetFamily === "accessoryCircular" ||
+    config.widgetFamily === "small"
+  )
+}
+
+function drawLockWidget(items) {
+  w.addText("서울대공원 캠핑장").font = Font.boldSystemFont(12)
+  w.addSpacer(4)
+
+  if (items.length > 0) {
+    w.addText("예약 가능").font = Font.boldSystemFont(20)
+    addSmall(`${formatDate(items[0].date)} 외 ${Math.max(0, items.length - 1)}일`)
+  } else {
+    w.addText("예약 없음").font = Font.boldSystemFont(20)
+    addSmall("주말 빈자리 없음")
+  }
+}
+
+function drawHomeWidget(items) {
+  w.addText("🏕️ 서울대공원 주말").font = Font.boldSystemFont(15)
+  w.addSpacer(6)
+
+  if (items.length === 0) {
+    addLine("예약 가능 자리 없음")
+    addSmall("토·일 / 1박 기준")
+    return
+  }
+
+  for (const item of items.slice(0, 6)) {
+    addLine(`${formatDate(item.date)}  ${item.count}개`)
+  }
+
+  w.addSpacer()
+  addSmall("탭하면 예약 페이지로 이동")
+}
+
+function drawError(e) {
+  w.addText("서울대공원 캠핑장").font = Font.boldSystemFont(13)
+  w.addSpacer(6)
+  w.addText("확인 실패").font = Font.boldSystemFont(18)
+  addSmall(String(e.message || e))
+}
+
+function addLine(text) {
+  const t = w.addText(text)
+  t.font = Font.systemFont(13)
+  t.lineLimit = 1
+  w.addSpacer(3)
+}
+
+function addSmall(text) {
+  const t = w.addText(text)
+  t.font = Font.systemFont(10)
+  t.textOpacity = 0.6
+  t.lineLimit = 2
+}
+
+function getMonths(n) {
+  const arr = []
+  const today = new Date()
+
+  for (let i = 0; i < n; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1)
+    arr.push(`${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`)
+  }
+
+  return arr
+}
+
+function isWeekend(ymd) {
+  const d = new Date(
+    Number(ymd.slice(0, 4)),
+    Number(ymd.slice(4, 6)) - 1,
+    Number(ymd.slice(6, 8))
+  )
+
+  const day = d.getDay()
+  return day === 6 || day === 0
+}
+
+function formatDate(ymd) {
+  const y = Number(ymd.slice(0, 4))
+  const m = Number(ymd.slice(4, 6))
+  const d = Number(ymd.slice(6, 8))
+  const date = new Date(y, m - 1, d)
+  const yoil = "일월화수목금토"[date.getDay()]
+  return `${m}/${d}(${yoil})`
+}</code></pre>
       </section>
     </main>
 

@@ -35,7 +35,246 @@
           </div>
           <button class="copy-button" type="button" data-copy-target="#national-museum-kids-code">복사</button>
         </div>
-        <pre class="code-block"><code id="national-museum-kids-code"></code></pre>
+        <pre class="code-block"><code id="national-museum-kids-code">// 국립중앙박물관 어린이박물관 예약 위젯
+// Parameter:
+// - home 또는 공백: 홈화면용, 시간 표시
+// - lock: 잠금화면용, 가능 여부만 표시
+
+const BASE = "https://www.museum.go.kr"
+const PAGE_URL = `${BASE}/MUSEUM/contents/M0104010000.do?schM=child&act=intro`
+
+const SHOP_CODE = "102830101202"
+const PRODUCT_GROUP_CODE = "0101"
+const DAYS_TO_SHOW = 2
+const MAX_LOOKAHEAD_DAYS = 21
+
+const MODE = (args.widgetParameter || "home").trim().toLowerCase()
+const IS_LOCK = MODE === "lock"
+
+const w = new ListWidget()
+w.url = PAGE_URL
+w.setPadding(IS_LOCK ? 6 : 14, IS_LOCK ? 8 : 14, IS_LOCK ? 6 : 14, IS_LOCK ? 8 : 14)
+
+try {
+  await requestText(PAGE_URL)
+
+  const days = await getWeekendDays(DAYS_TO_SHOW)
+
+  if (IS_LOCK) {
+    await drawLockWidget(days)
+  } else {
+    await drawHomeWidget(days)
+  }
+
+} catch (e) {
+  const err = w.addText("조회 실패")
+  err.font = Font.boldSystemFont(IS_LOCK ? 10 : 13)
+
+  const msg = w.addText(String(e.message || e))
+  msg.font = Font.systemFont(9)
+  msg.textColor = Color.gray()
+}
+
+if (config.runsInWidget) {
+  Script.setWidget(w)
+} else {
+  if (IS_LOCK) {
+    await w.presentSmall()
+  } else {
+    await w.presentMedium()
+  }
+}
+
+Script.complete()
+
+async function drawHomeWidget(days) {
+  const title = w.addText("국중박 어린이🏛")
+  title.font = Font.boldSystemFont(15)
+
+  w.addSpacer(8)
+
+  if (days.length === 0) {
+    const none = w.addText("예약 가능 시간 없음")
+    none.font = Font.systemFont(13)
+    none.textColor = Color.gray()
+    return
+  }
+
+  for (const item of days) {
+    const label = formatLabel(item.date)
+
+    if (item.times.length === 0) {
+      const line = w.addText(`${label} ❌`)
+      line.font = Font.boldSystemFont(13)
+      w.addSpacer(6)
+      continue
+    }
+
+    const dayTitle = w.addText(label)
+    dayTitle.font = Font.boldSystemFont(13)
+
+    const lines = chunkTimes(item.times, 3)
+
+    for (const lineText of lines) {
+      const line = w.addText(lineText)
+      line.font = Font.systemFont(12)
+      line.lineLimit = 1
+    }
+
+    w.addSpacer(6)
+  }
+
+  const updated = w.addText(nowHHmm())
+  updated.font = Font.systemFont(10)
+  updated.textColor = Color.gray()
+}
+
+async function drawLockWidget(days) {
+  const title = w.addText("국중박 어린이🏛")
+  title.font = Font.boldSystemFont(10)
+  title.lineLimit = 1
+
+  w.addSpacer(1)
+
+  if (days.length === 0) {
+    const none = w.addText("예약 없음")
+    none.font = Font.boldSystemFont(10)
+    return
+  }
+
+  for (const item of days) {
+    const label = formatLabelLock(item.date)
+    const mark = item.times.length > 0 ? "✅" : "❌"
+
+    const line = w.addText(`${label} ${mark}`)
+    line.font = Font.boldSystemFont(10)
+    line.lineLimit = 1
+  }
+
+  const updated = w.addText(nowHHmm())
+  updated.font = Font.systemFont(8)
+  updated.textColor = Color.gray()
+}
+
+async function getWeekendDays(count) {
+  const result = []
+  const today = new Date()
+
+  for (let i = 0; result.length < count && i < MAX_LOOKAHEAD_DAYS; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() + i)
+
+    const day = d.getDay()
+    if (day !== 0 && day !== 6) continue
+
+    const list = await fetchSequences(formatYmd(d))
+
+    const available = list
+      .filter(x => Number(x.book_remain_count || 0) > 0)
+      .filter(x => String(x.book_yn || "1") === "1")
+      .filter(x => {
+        if (!isSameDate(d, today)) return true
+        return timeToDate(d, x.end_time) > new Date()
+      })
+      .sort((a, b) => Number(a.start_time) - Number(b.start_time))
+
+    if (isSameDate(d, today) && available.length === 0) {
+      continue
+    }
+
+    result.push({
+      date: d,
+      times: available.map(x => fmtTime(x.start_time))
+    })
+  }
+
+  return result
+}
+
+async function fetchSequences(playDate) {
+  const url =
+    `${BASE}/ticket_reservation/Web/Book/GetBookPlaySequence.json` +
+    `?shop_code=${SHOP_CODE}` +
+    `&play_date=${playDate}` +
+    `&product_group_code=${PRODUCT_GROUP_CODE}`
+
+  const json = await requestJson(url)
+  return json?.data?.bookPlaySequenceList || []
+}
+
+async function requestJson(url) {
+  const req = new Request(url)
+  req.headers = commonHeaders()
+  return await req.loadJSON()
+}
+
+async function requestText(url) {
+  const req = new Request(url)
+  req.headers = commonHeaders()
+  return await req.loadString()
+}
+
+function commonHeaders() {
+  return {
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Accept-Language": "ko-KR,ko;q=0.9",
+    "Referer": PAGE_URL,
+    "User-Agent": "Mozilla/5.0"
+  }
+}
+
+function chunkTimes(times, size) {
+  const result = []
+  for (let i = 0; i < times.length; i += size) {
+    result.push(times.slice(i, i + size).join(" · "))
+  }
+  return result
+}
+
+function formatYmd(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}${m}${day}`
+}
+
+function formatLabel(d) {
+  const yoil = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()]
+  return `${d.getMonth() + 1}/${d.getDate()}(${yoil})`
+}
+
+function formatLabelLock(d) {
+  const yoil = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()]
+  return `${d.getMonth() + 1}/${d.getDate()} ${yoil}`
+}
+
+function fmtTime(t) {
+  const s = String(t || "").padStart(4, "0")
+  return `${s.slice(0, 2)}:${s.slice(2)}`
+}
+
+function nowHHmm() {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+}
+
+function isSameDate(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
+function timeToDate(date, hhmm) {
+  const s = String(hhmm || "").padStart(4, "0")
+  const d = new Date(date)
+  d.setHours(Number(s.slice(0, 2)))
+  d.setMinutes(Number(s.slice(2)))
+  d.setSeconds(0)
+  d.setMilliseconds(0)
+  return d
+}</code></pre>
       </section>
     </main>
 
