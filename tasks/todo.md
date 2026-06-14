@@ -86,3 +86,20 @@ Calm iPhone utility guide: bright, trustworthy, mobile-first, with crisp typogra
 - Kept a copyable Instagram DM template.
 - Verified local links across 7 HTML files.
 - Verified in browser that the request page has no `현재 위젯`/`위젯 보기` copy and no CTA buttons.
+
+## Update Plan - Three DM Widget Pages
+- [x] Create `/widgets/finance/usd-krw/` for USD/KRW exchange-rate widget.
+- [x] Create `/widgets/museum/national-museum-korea-kids/` for National Museum of Korea kids widget.
+- [x] Create `/widgets/camping/seoul-grand-park/` for Seoul Grand Park camping widget.
+- [x] Leave Scriptable code empty for now so scripts can be added later.
+- [x] Verify all new routes locally.
+
+## Update Review - Three DM Widget Pages
+- Added `/widgets/finance/usd-krw/`.
+- Added `/widgets/museum/national-museum-korea-kids/`.
+- Added `/widgets/camping/seoul-grand-park/`.
+- Kept the pages unlisted from public navigation.
+- Left Scriptable code out of the new pages so scripts can be added later.
+- Verified 10 HTML files have valid local href/src targets.
+- Verified the three new routes return HTTP 200 locally.
+- Verified in browser that all three new pages show "스크립트 준비 중" and do not include Scriptable code.

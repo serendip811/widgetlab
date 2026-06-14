@@ -7,6 +7,9 @@ Scriptable 아이폰 위젯 설치 가이드와 DM으로 전달할 개별 위젯
 - `index.html`: 메인 페이지
 - `install/`: Scriptable 설치 가이드
 - `widgets/`: 목록 없는 DM 링크 안내 페이지
+- `widgets/finance/usd-krw/`: 달러 환율 위젯 페이지
+- `widgets/museum/national-museum-korea-kids/`: 국립중앙박물관 어린이박물관 위젯 페이지
+- `widgets/camping/seoul-grand-park/`: 서울대공원 캠핑장 위젯 페이지
 - `widgets/camping/`: 서울대공원 캠핑장 위젯 페이지
 - `widgets/museum/`: 어린이박물관 위젯 페이지
 - `widgets/pool/`: 수영장 예약 위젯 페이지
