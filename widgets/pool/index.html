@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>수영장 예약 위젯 | 위젯연구소</title>
+    <meta name="description" content="수영장 예약 Scriptable 위젯 설치 안내와 코드 복사 페이지.">
+    <link rel="stylesheet" href="../../assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../../">위젯연구소</a>
+      <nav class="nav-links" aria-label="주요 메뉴">
+        <a href="../../install/">설치방법</a>
+        <a href="../../widgets/" aria-current="page">위젯목록</a>
+        <a href="../../request/">위젯요청</a>
+      </nav>
+    </header>
+
+    <main class="page-shell detail-page">
+      <section class="page-hero detail-hero">
+        <p class="eyebrow">수영장 예약</p>
+        <h1>수영장 위젯 코드</h1>
+        <p>예약 사이트 바로가기와 상태 메시지를 담는 Scriptable 위젯 샘플입니다. 실제 예약 확인 로직은 운영 코드로 교체하세요.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="../../install/">설치방법 먼저 보기</a>
+          <button class="button secondary" type="button" data-copy-target="#pool-code">코드 복사</button>
+        </div>
+      </section>
+
+      <section class="code-section">
+        <div class="code-heading">
+          <div>
+            <p class="eyebrow">Scriptable</p>
+            <h2>코드</h2>
+          </div>
+          <button class="copy-button" type="button" data-copy-target="#pool-code">복사</button>
+        </div>
+        <pre class="code-block"><code id="pool-code">// 위젯연구소 - 수영장 예약 위젯 샘플
+// 실제 시설별 예약 확인 로직으로 values를 교체하세요.
+
+const values = {
+  title: "수영장 예약",
+  status: "예약 페이지 확인",
+  detail: "원하는 시간대가 열렸는지 확인하세요.",
+  link: "https://yeyak.seoul.go.kr"
+};
+
+const widget = new ListWidget();
+widget.backgroundColor = new Color("#f3f8ff");
+widget.url = values.link;
+widget.setPadding(18, 18, 18, 18);
+
+const title = widget.addText(values.title);
+title.font = Font.boldSystemFont(17);
+title.textColor = new Color("#172b45");
+
+widget.addSpacer(12);
+
+const status = widget.addText(values.status);
+status.font = Font.semiboldSystemFont(23);
+status.textColor = new Color("#2767b1");
+status.minimumScaleFactor = 0.7;
+
+widget.addSpacer(8);
+
+const detail = widget.addText(values.detail);
+detail.font = Font.systemFont(13);
+detail.textColor = new Color("#4a5e78");
+detail.lineLimit = 2;
+
+widget.addSpacer();
+
+const footer = widget.addText("눌러서 예약 페이지 열기");
+footer.font = Font.mediumSystemFont(12);
+footer.textColor = new Color("#c66b43");
+
+Script.setWidget(widget);
+Script.complete();</code></pre>
+      </section>
+
+      <section class="section detail-notes">
+        <div>
+          <p class="eyebrow">DM 안내 문구</p>
+          <h2>복사해서 바로 보낼 수 있는 문구</h2>
+        </div>
+        <div class="share-box">
+          <p id="pool-share">안녕하세요. 요청하신 수영장 예약 위젯입니다. 설치방법과 코드는 아래 링크에서 확인해주세요.</p>
+          <button class="copy-button" type="button" data-copy-target="#pool-share">문구 복사</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>위젯연구소</p>
+      <a href="../">위젯목록으로 돌아가기</a>
+    </footer>
+
+    <script src="../../assets/site.js"></script>
+  </body>
+</html>
