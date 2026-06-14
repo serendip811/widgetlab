@@ -73,3 +73,16 @@ Calm iPhone utility guide: bright, trustworthy, mobile-first, with crisp typogra
 - Replaced `/widgets/` with a noindex 안내 page that does not expose widget names.
 - Verified 7 local routes return HTTP 200.
 - Verified the install page and direct camping widget page in the in-app browser.
+
+## Update Plan - Instagram DM Request Copy
+- [x] Rewrite the request page to say widget requests should be sent by Instagram DM.
+- [x] Remove unrelated CTA buttons from the request page.
+- [x] Keep the copyable DM template.
+- [x] Verify page text and local links.
+
+## Update Review - Instagram DM Request Copy
+- Request page now explicitly says widget requests should be sent by Instagram DM.
+- Removed unrelated CTA buttons from the request page.
+- Kept a copyable Instagram DM template.
+- Verified local links across 7 HTML files.
+- Verified in browser that the request page has no `현재 위젯`/`위젯 보기` copy and no CTA buttons.
