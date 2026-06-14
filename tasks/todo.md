@@ -116,3 +116,15 @@ Calm iPhone utility guide: bright, trustworthy, mobile-first, with crisp typogra
 - Added `tasks/lessons.md` to prevent putting operator-only DM helper copy in public widget pages again.
 - Verified with search that widget HTML no longer contains DM 안내/share-copy/internal DM-link wording.
 - Verified in browser that the six widget detail pages have no `.share-box` and no operator DM guide copy.
+
+## Correction Plan - Remove Preparing Placeholder
+- [x] Replace "스크립트 준비 중" user-facing placeholder sections on the three new widget pages.
+- [x] Add empty Scriptable code blocks with copy buttons so scripts can be pasted in later.
+- [x] Update lessons to avoid public "coming soon/preparing" copy on pages meant to receive script content.
+- [x] Verify the three new pages no longer show preparing/coming-later copy.
+
+## Correction Review - Remove Preparing Placeholder
+- Converted the three new widget pages into normal code pages with empty `<code>` blocks.
+- Removed "준비 중", "준비되는 대로", and "나중에 추가" user-facing copy from those pages.
+- Added a minimum height to code blocks so the empty script area remains visually stable until scripts are pasted in.
+- Verified in browser that the three pages show code sections, copy buttons, empty code blocks, and no preparing copy.

@@ -498,6 +498,7 @@ h3 {
 
 .code-block code {
   display: block;
+  min-height: 180px;
   min-width: 680px;
   padding: 24px;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
