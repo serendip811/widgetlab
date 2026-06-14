@@ -55,4 +55,4 @@ Calm iPhone utility guide: bright, trustworthy, mobile-first, with crisp typogra
 - [x] Set `origin` to `git@github.com:serendip811/widgetlab.git`.
 - [x] Re-run lightweight checks before commit.
 - [x] Commit the initial GitHub Pages site.
-- [ ] Push the site branch to GitHub.
+- [x] Push the site branch to GitHub.
