@@ -103,3 +103,16 @@ Calm iPhone utility guide: bright, trustworthy, mobile-first, with crisp typogra
 - Verified 10 HTML files have valid local href/src targets.
 - Verified the three new routes return HTTP 200 locally.
 - Verified in browser that all three new pages show "스크립트 준비 중" and do not include Scriptable code.
+
+## Correction Plan - Remove Operator DM Copy
+- [x] Remove DM 안내 문구 sections from all widget detail pages.
+- [x] Remove internal "DM으로 전달할 링크" wording from user-facing placeholder pages.
+- [x] Add a lesson so future public pages do not include operator-only helper copy.
+- [x] Verify no DM 안내/share copy remains in widget pages.
+
+## Correction Review - Remove Operator DM Copy
+- Removed the DM 안내/share-copy section from all six widget detail pages.
+- Reworded placeholder widget pages to say scripts can be copied from the page once ready.
+- Added `tasks/lessons.md` to prevent putting operator-only DM helper copy in public widget pages again.
+- Verified with search that widget HTML no longer contains DM 안내/share-copy/internal DM-link wording.
+- Verified in browser that the six widget detail pages have no `.share-box` and no operator DM guide copy.
