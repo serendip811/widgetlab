@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>실시간 인기 뉴수 위젯 | 위젯연구소</title>
+    <meta name="description" content="실시간 인기 뉴스 Scriptable 위젯 안내 페이지.">
+    <link rel="stylesheet" href="../../assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../../">위젯연구소</a>
+      <nav class="nav-links" aria-label="주요 메뉴">
+        <a href="../../install/">설치방법</a>
+        <a href="../../request/">위젯요청</a>
+      </nav>
+    </header>
+
+    <main class="page-shell detail-page">
+      <section class="page-hero detail-hero">
+        <p class="eyebrow">실시간 인기 뉴스</p>
+        <h1>인기 뉴스 위젯</h1>
+        <p>실시간 인기 뉴스 정보를 확인하기 위한 Scriptable 위젯 코드 페이지입니다.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="../../install/">설치방법 먼저 보기</a>
+          <button class="button secondary" type="button" data-copy-target="#national-museum-kids-code">코드 복사</button>
+        </div>
+      </section>
+
+      <section class="code-section">
+        <div class="code-heading">
+          <div>
+            <p class="eyebrow">Scriptable</p>
+            <h2>코드</h2>
+          </div>
+          <button class="copy-button" type="button" data-copy-target="#national-museum-kids-code">복사</button>
+        </div>
+        <pre class="code-block"><code id="national-museum-kids-code">// === 실시간 인기 뉴스 위젯 ===
+// Google News 한국 헤드라인 5개
+// 탭하면 해당 뉴스로 이동
+
+const LIMIT = 5
+const RSS_URL = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko"
+
+const w = new ListWidget()
+w.setPadding(14, 14, 14, 14)
+w.backgroundColor = new Color("#111827")
+
+const title = w.addText("🔥 지금 많이 보는 뉴스")
+title.font = Font.boldSystemFont(15)
+title.textColor = Color.white()
+
+w.addSpacer(8)
+
+try {
+  const req = new Request(RSS_URL)
+  req.headers = {
+    "User-Agent": "Mozilla/5.0"
+  }
+
+  const xml = await req.loadString()
+  const items = parseItems(xml).slice(0, LIMIT)
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+
+    const row = w.addStack()
+    row.layoutHorizontally()
+    row.centerAlignContent()
+    row.url = item.link
+
+    const rank = row.addText(`${i + 1}`)
+    rank.font = Font.boldSystemFont(13)
+    rank.textColor = new Color("#FBBF24")
+
+    row.addSpacer(8)
+
+    const text = row.addText(cleanTitle(item.title))
+    text.font = Font.systemFont(13)
+    text.textColor = Color.white()
+    text.lineLimit = 2
+
+    w.addSpacer(6)
+  }
+
+  w.addSpacer(4)
+
+  const foot = w.addText("Google News 기준")
+  foot.font = Font.systemFont(10)
+  foot.textColor = new Color("#9CA3AF")
+
+} catch (e) {
+  const err = w.addText("뉴스를 불러오지 못했어요")
+  err.textColor = Color.white()
+  err.font = Font.boldSystemFont(13)
+
+  w.addSpacer(4)
+
+  const msg = w.addText(String(e))
+  msg.textColor = new Color("#9CA3AF")
+  msg.font = Font.systemFont(10)
+}
+
+Script.setWidget(w)
+Script.complete()
+
+function parseItems(xml) {
+  const blocks = xml.match(/<item>[\s\S]*?<\/item>/g) || []
+  const items = []
+
+  for (const block of blocks) {
+    const title = decode(getTag(block, "title"))
+    const link = decode(getTag(block, "link"))
+
+    if (title && link) {
+      items.push({ title, link })
+    }
+  }
+
+  return items
+}
+
+function getTag(text, tag) {
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`)
+  const m = text.match(re)
+  return m ? m[1].trim() : ""
+}
+
+function decode(str) {
+  return str
+    .replace(/<!\[CDATA\[/g, "")
+    .replace(/\]\]>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+}
+
+function cleanTitle(title) {
+  return title.replace(/\s-\s[^-]+$/g, "")
+}</code></pre>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>위젯연구소</p>
+      <a href="../../install/">설치방법 보기</a>
+    </footer>
+
+    <script src="../../assets/site.js"></script>
+  </body>
+</html>
